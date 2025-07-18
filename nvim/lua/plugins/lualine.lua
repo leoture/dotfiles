@@ -26,55 +26,147 @@ return {
       return string.format("󱡅 %s/%d", current_mark, total_marks)
     end
 
-    -- Define Copilot status component
     local function copilot_status()
       if vim.g.copilot_enabled == 1 then
         return ""  -- Nerd Font Copilot icon
       end
       return ""
     end
+
+    local function treesitter_status()
+      local statusline = require("nvim-treesitter").statusline({
+        indicator_size = 100,
+        type_patterns = { "class", "function", "method" },
+        separator = " | ",
+      })
+      return statusline == nil and "" or statusline
+    end
+
+    local lazy_status = require('lazy.status')
+
+    local pallet = require('catppuccin.palettes').get_palette()
+
+    local primaryColor = "#ff9e64"
+
     require('lualine').setup({
       options = {
-        --theme = 'catppuccin'
-        theme = 'rose-pine',
+        component_separators = '',
+        section_separators = ' ',
+        theme = {
+          normal = {
+            a = { bg = pallet.mantle, fg = pallet.text },
+            b = { bg = pallet.mantle, fg = pallet.text },
+            c = { bg = pallet.mantle, fg = pallet.text },
+            x = { bg = pallet.mantle, fg = pallet.text },
+            y = { bg = pallet.mantle, fg = primaryColor },
+            z = { bg = pallet.blue, fg = pallet.mantle, gui = 'bold' },
+          },
+          insert = {
+            a = { bg = pallet.mantle, fg = pallet.text },
+            b = { bg = pallet.mantle, fg = pallet.text },
+            c = { bg = pallet.mantle, fg = pallet.text },
+            x = { bg = pallet.mantle, fg = pallet.text },
+            y = { bg = pallet.mantle, fg = primaryColor },
+            z = { bg = pallet.green, fg = pallet.mantle, gui = 'bold' },
+          },
+          visual = {
+            a = { bg = pallet.mantle, fg = pallet.text },
+            b = { bg = pallet.mantle, fg = pallet.text },
+            c = { bg = pallet.mantle, fg = pallet.text },
+            x = { bg = pallet.mantle, fg = pallet.text },
+            y = { bg = pallet.mantle, fg = primaryColor },
+            z = { bg = pallet.mauve, fg = pallet.mantle, gui = 'bold' },
+          },
+          replace = {
+            a = { bg = pallet.mantle, fg = pallet.text },
+            b = { bg = pallet.mantle, fg = pallet.text },
+            c = { bg = pallet.mantle, fg = pallet.text },
+            x = { bg = pallet.mantle, fg = pallet.text },
+            y = { bg = pallet.mantle, fg = primaryColor },
+            z = { bg = pallet.red, fg = pallet.mantle, gui = 'bold' },
+          },
+          command = {
+            a = { bg = pallet.mantle, fg = pallet.text },
+            b = { bg = pallet.mantle, fg = pallet.text },
+            c = { bg = pallet.mantle, fg = pallet.text },
+            x = { bg = pallet.mantle, fg = pallet.text },
+            y = { bg = pallet.mantle, fg = primaryColor },
+            z = { bg = pallet.peach, fg = pallet.mantle, gui = 'bold' },
+          },
+          inactive = {
+            a = { bg = pallet.mantle, fg = pallet.text },
+            b = { bg = pallet.mantle, fg = pallet.text },
+            c = { bg = pallet.mantle, fg = pallet.text },
+            x = { bg = pallet.mantle, fg = pallet.text },
+            y = { bg = pallet.mantle, fg = primaryColor },
+            z = { bg = pallet.overlay1, fg = pallet.mantle, gui = 'bold' },
+          }
+        }
       },
-      sections = {
-        lualine_b = {
-          'branch',
-          'diff',
+      tabline = {
+        lualine_a = {
           {
-            'diagnostics',
-            -- Table of diagnostic sources, available sources are:
-            --   'nvim_lsp', 'nvim_diagnostic', 'nvim_workspace_diagnostic', 'coc', 'ale', 'vim_lsp'.
-            -- or a function that returns a table as such:
-            --   { error=error_cnt, warn=warn_cnt, info=info_cnt, hint=hint_cnt }
-            sources = { 'nvim_diagnostic', 'coc', 'nvim_lsp' },
-
-            -- Displays diagnostics for the defined severity types
-            sections = { 'error', 'warn', 'info', 'hint' },
-
-            diagnostics_color = {
-              -- Same values as the general color option can be used here.
-              error = 'DiagnosticError', -- Changes diagnostics' error color.
-              warn  = 'DiagnosticWarn',  -- Changes diagnostics' warn color.
-              info  = 'DiagnosticInfo',  -- Changes diagnostics' info color.
-              hint  = 'DiagnosticHint',  -- Changes diagnostics' hint color.
+            'buffers',
+            buffers_color = {
+              active = { fg = pallet.mantle, bg = primaryColor },
+              inactive = { fg = primaryColor, bg = pallet.mantle }
             },
-            symbols = {error = 'E', warn = 'W', info = 'I', hint = 'H'},
-            colored = true,           -- Displays diagnostics status in color if set to true.
-            update_in_insert = true, -- Update diagnostics in insert mode.
-            always_visible = true,   -- Show diagnostics even if there are none.
+          },
+        },
+        lualine_z = {
+          {
+            'tabs',
+            tabs_color = {
+            active = { fg = pallet.mantle, bg = primaryColor },
+            inactive = { fg = primaryColor, bg = pallet.mantle}
+            },
+          },
+        }
+      },
+      winbar = {
+        lualine_a = {
+          {
+            treesitter_status,
+            color = { fg = pallet.teal, bg = pallet.mantle },
           }
         },
-        lualine_c = {
-          { 'filename', path = 1 },
-          harpoon_component
+      },
+      sections = {
+        lualine_a = {
+          'branch',
+          'diff',
         },
-        lualine_x = {
-          'encoding',
-          'fileformat',
-          'filetype',
-          copilot_status,  -- Add Copilot status component
+        lualine_b = {
+          'diagnostics',
+        },
+        lualine_c = {},
+        lualine_y = {
+          harpoon_component,
+          {
+            lazy_status.updates,
+            cond = lazy_status.has_updates,
+          },
+          copilot_status,
+        },
+        lualine_z = {
+          {
+            'searchcount',
+            padding = { left = 1, right = 0 }
+          },
+          {
+            'progress',
+            padding = { left = 1, right = 0 }
+          },
+          {
+            'location',
+          },
+          {
+            'mode',
+            fmt = function(str)
+              return str:sub(1, 1)
+            end,
+            padding = { left = 0, right = 1 }
+          }
         },
       }
     })
